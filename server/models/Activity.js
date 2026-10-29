@@ -9,11 +9,17 @@ const activitySchema = new mongoose.Schema(
     },
 
     type: {
-      type: String,
-      enum: ["Call", "Meeting", "Email", "WhatsApp", "Note"],
-      required: true,
-    },
-
+  type: String,
+  enum: [
+    "Call",
+    "Meeting",
+    "Email",
+    "WhatsApp",
+    "Note",
+    "Follow-up",
+  ],
+  required: true,
+},
     subject: {
       type: String,
       required: true,
