@@ -14,7 +14,8 @@ app.use(express.json());
 connectDB();
 
 const customerRoutes = require("./routes/customerRoutes");
-
+const followUpRoutes = require("./routes/followUpRoutes");
+app.use("/api/follow-ups", followUpRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/activities", activityRoutes);
 app.get("/", (req, res) => {
