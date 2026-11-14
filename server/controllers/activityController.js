@@ -1,5 +1,5 @@
 const Activity = require("../models/Activity");
-
+const activityService = require("../services/activityService");
 // GET all activities
 const getActivities = async (req, res) => {
   try {
@@ -17,23 +17,31 @@ const getActivities = async (req, res) => {
 };
 
 // CREATE activity
+
 const createActivity = async (req, res) => {
   try {
-    const activity = await Activity.create(req.body);
+    const activity = await activityService.createActivity(req.body);
 
-    const populatedActivity = await activity.populate(
-      "customer",
-      "name type location"
-    );
-
-    res.status(201).json(populatedActivity);
+    return res.status(201).json(activity);
   } catch (error) {
-    res.status(400).json({
-      message: "Failed to create activity",
-      error: error.message,
+    console.error("Create activity error:", error.message);
+
+    const clientErrors = [
+      "Follow-up title and due date are required",
+      "Customer, title, and due date are required",
+      "Customer not found",
+    ];
+
+    const statusCode = clientErrors.includes(error.message)
+      ? 400
+      : 500;
+
+    return res.status(statusCode).json({
+      message: error.message,
     });
   }
 };
+
 
 module.exports = {
   getActivities,

@@ -32,6 +32,13 @@ const initialForm = {
   notes: "",
   status: "Completed",
   activityDate: "",
+  createFollowUp: false,
+  followUpDetails: {
+    title: "",
+    description: "",
+    dueDate: "",
+    priority: "Medium",
+  },
 };
 
 function formatDate(date) {
@@ -124,12 +131,24 @@ function Activities() {
 
     try {
       const payload = {
-        customer: formData.customer,
-        type: formData.type,
-        subject: formData.subject.trim(),
-        notes: formData.notes.trim(),
-        status: formData.status,
-      };
+  customer: formData.customer,
+  type: formData.type,
+  subject: formData.subject.trim(),
+  notes: formData.notes.trim(),
+  status: formData.status,
+  createFollowUp: formData.createFollowUp,
+};
+
+if (formData.createFollowUp) {
+  payload.followUpDetails = {
+    title: formData.followUpDetails.title.trim(),
+    description: formData.followUpDetails.description.trim(),
+    dueDate: new Date(
+      formData.followUpDetails.dueDate
+    ).toISOString(),
+    priority: formData.followUpDetails.priority,
+  };
+}
 
       if (formData.activityDate) {
         payload.activityDate = new Date(
@@ -465,6 +484,7 @@ function Activities() {
                       <option value="Meeting">Meeting</option>
                       <option value="Email">Email</option>
                       <option value="WhatsApp">WhatsApp</option>
+                      <option value="Follow-up">Follow-up</option>
                       <option value="Note">Note</option>
                     </select>
                   </div>
@@ -496,6 +516,109 @@ function Activities() {
                     required
                   />
                 </div>
+                    
+<div className="form-group">
+  <label className="followup-checkbox-label">
+    <input
+      type="checkbox"
+      checked={formData.createFollowUp}
+      onChange={(event) =>
+        setFormData((previous) => ({
+          ...previous,
+          createFollowUp: event.target.checked,
+        }))
+      }
+    />
+    Create a follow-up task
+  </label>
+</div>
+
+{formData.createFollowUp && (
+  <div className="followup-fields">
+    <h3>Follow-up details</h3>
+
+    <div className="form-group">
+      <label htmlFor="followup-title">Task title *</label>
+      <input
+        id="followup-title"
+        type="text"
+        value={formData.followUpDetails.title}
+        onChange={(event) =>
+          setFormData((previous) => ({
+            ...previous,
+            followUpDetails: {
+              ...previous.followUpDetails,
+              title: event.target.value,
+            },
+          }))
+        }
+        placeholder="e.g. Send revised quotation"
+        required
+      />
+    </div>
+
+    <div className="form-group">
+      <label htmlFor="followup-description">Description</label>
+      <textarea
+        id="followup-description"
+        value={formData.followUpDetails.description}
+        onChange={(event) =>
+          setFormData((previous) => ({
+            ...previous,
+            followUpDetails: {
+              ...previous.followUpDetails,
+              description: event.target.value,
+            },
+          }))
+        }
+        placeholder="What needs to be done?"
+        rows={2}
+      />
+    </div>
+
+    <div className="form-row">
+      <div className="form-group">
+        <label htmlFor="followup-due-date">Due date and time *</label>
+        <input
+          id="followup-due-date"
+          type="datetime-local"
+          value={formData.followUpDetails.dueDate}
+          onChange={(event) =>
+            setFormData((previous) => ({
+              ...previous,
+              followUpDetails: {
+                ...previous.followUpDetails,
+                dueDate: event.target.value,
+              },
+            }))
+          }
+          required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="followup-priority">Priority</label>
+        <select
+          id="followup-priority"
+          value={formData.followUpDetails.priority}
+          onChange={(event) =>
+            setFormData((previous) => ({
+              ...previous,
+              followUpDetails: {
+                ...previous.followUpDetails,
+                priority: event.target.value,
+              },
+            }))
+          }
+        >
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+    </div>
+  </div>
+)}
 
                 <div className="form-group">
                   <label htmlFor="activity-notes">Notes</label>
