@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
+const { companyField } = require("../utils/tenant");
 
 const customerSchema = new mongoose.Schema(
   {
+    company: companyField,
+
     name: {
       type: String,
       required: true,

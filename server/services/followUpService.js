@@ -1,15 +1,17 @@
-
 const FollowUp = require("../models/FollowUp");
 const Customer = require("../models/Customer");
+const Activity = require("../models/Activity");
+const { HttpError } = require("../utils/httpError");
+const { assertInCompany } = require("../utils/tenant");
 
-const getAllFollowUps = async () => {
-  return FollowUp.find()
+const getAllFollowUps = async (companyId) => {
+  return FollowUp.find({ company: companyId })
     .populate("customer", "name type location")
     .populate("activity", "type subject activityDate")
     .sort({ dueDate: 1 });
 };
 
-const createFollowUp = async (data) => {
+const createFollowUp = async (data, companyId) => {
   const {
     customer,
     activity = null,
@@ -21,16 +23,15 @@ const createFollowUp = async (data) => {
   } = data;
 
   if (!customer || !title || !dueDate) {
-    throw new Error("Customer, title, and due date are required");
+    throw new HttpError(400, "Customer, title, and due date are required");
   }
 
-  const validCustomer = await Customer.findById(customer);
-
-  if (!validCustomer) {
-    throw new Error("Customer not found");
-  }
+  // Both references must belong to the same company
+  await assertInCompany(Customer, customer, companyId, "Customer");
+  await assertInCompany(Activity, activity, companyId, "Activity");
 
   const followUp = await FollowUp.create({
+    company: companyId,
     customer,
     activity,
     title,

@@ -13,9 +13,8 @@ import {
   Sparkles,
   RefreshCw,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-
-const API_URL = "http://localhost:5000/api";
+import { useState, useEffect } from "react";
+import { API_URL, authFetch } from "../api";
 
 const typeIcons = {
   Call: Phone,
@@ -74,14 +73,15 @@ function Activities() {
   const [success, setSuccess] = useState("");
 
   // Fetch real activities and customers from the backend.
-  const fetchPageData = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const [reloadKey, setReloadKey] = useState(0);
 
-    try {
+  useEffect(() => {
+    let active = true; // ignore responses that arrive after a newer request
+
+    const load = async () => {
       const [activityResponse, customerResponse] = await Promise.all([
-        fetch(`${API_URL}/activities`),
-        fetch(`${API_URL}/customers`),
+        authFetch(`${API_URL}/activities`),
+        authFetch(`${API_URL}/customers`),
       ]);
 
       if (!activityResponse.ok || !customerResponse.ok) {
@@ -95,21 +95,37 @@ function Activities() {
         throw new Error("The API returned an unexpected response.");
       }
 
-      setActivities(activityData);
-      setCustomers(customerData);
-    } catch (err) {
-      console.error("Failed to load Activities:", err);
-      setError(
-        "Could not load data. Check that your backend and MongoDB are running."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return [activityData, customerData];
+    };
 
-  useEffect(() => {
-    fetchPageData();
-  }, [fetchPageData]);
+    load()
+      .then(([activityData, customerData]) => {
+        if (!active) return;
+        setActivities(activityData);
+        setCustomers(customerData);
+      })
+      .catch((err) => {
+        console.error("Failed to load Activities:", err);
+        if (active) {
+          setError(
+            "Could not load data. Check that your backend and MongoDB are running."
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const fetchPageData = () => {
+    setLoading(true);
+    setError("");
+    setReloadKey((key) => key + 1);
+  };
 
   // Handle form inputs.
   const handleChange = (event) => {
@@ -156,7 +172,7 @@ if (formData.createFollowUp) {
         ).toISOString();
       }
 
-      const response = await fetch(`${API_URL}/activities`, {
+      const response = await authFetch(`${API_URL}/activities`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -173,7 +189,7 @@ if (formData.createFollowUp) {
       }
 
       // Fetch the latest records from the database.
-      await fetchPageData();
+      fetchPageData();
 
       setFormData(initialForm);
       setShowModal(false);

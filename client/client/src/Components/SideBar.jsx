@@ -7,13 +7,15 @@ import {
   Package,
   MessageSquare,
   Sparkles,
-  Settings,
+  UserCog,
+  LogOut,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
+import { useAuth, useCompanyPath } from "../auth/useAuth";
 
 const menuItems = [
-  { name: "Overview", path: "/", icon: LayoutDashboard },
+  { name: "Overview", path: "/", icon: LayoutDashboard, end: true },
   { name: "Customers", path: "/customers", icon: Users },
   { name: "Activities", path: "/activities", icon: Phone },
   { name: "Follow-ups", path: "/follow-ups", icon: RefreshCw },
@@ -24,11 +26,22 @@ const menuItems = [
 ];
 
 function Sidebar() {
+  const { user, company, signOut } = useAuth();
+  const to = useCompanyPath();
+
   return (
     <aside className="sidebar">
       <div className="logo">
         <div className="logo-icon">O</div>
         <span>OpsSync</span>
+      </div>
+
+      <div className="company-chip" title={`${window.location.host}/${company.slug}`}>
+        <span className="company-avatar">{company.name.charAt(0).toUpperCase()}</span>
+        <div>
+          <strong>{company.name}</strong>
+          <span>/{company.slug}</span>
+        </div>
       </div>
 
       <nav className="nav-menu">
@@ -38,7 +51,8 @@ function Sidebar() {
           return (
             <NavLink
               key={item.name}
-              to={item.path}
+              to={to(item.path)}
+              end={item.end}
               className={({ isActive }) =>
                 `nav-item ${isActive ? "active" : ""}`
               }
@@ -51,10 +65,29 @@ function Sidebar() {
       </nav>
 
       <div className="sidebar-bottom">
-        <button className="nav-item">
-          <Settings size={20} />
-          <span>Settings</span>
-        </button>
+        <NavLink
+          to={to("/team")}
+          className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+        >
+          <UserCog size={20} />
+          <span>Team</span>
+        </NavLink>
+
+        <div className="user-chip">
+          <div>
+            <strong>{user.name}</strong>
+            <span>{user.role}</span>
+          </div>
+          <button
+            type="button"
+            className="fu-icon-button"
+            onClick={signOut}
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </div>
     </aside>
   );

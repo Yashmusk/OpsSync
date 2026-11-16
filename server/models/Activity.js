@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
+const { companyField } = require("../utils/tenant");
 
 const activitySchema = new mongoose.Schema(
   {
+    company: companyField,
+
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",

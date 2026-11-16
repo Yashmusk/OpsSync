@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   RefreshCw,
@@ -10,8 +10,7 @@ import {
   CalendarDays,
   X,
 } from "lucide-react";
-
-const API_URL = "http://localhost:5000/api";
+import { API_URL, authFetch } from "../api";
 
 const initialForm = {
   customer: "",
@@ -56,44 +55,59 @@ export default function FollowUps() {
   const [formError, setFormError] = useState("");
   const [form, setForm] = useState(initialForm);
 
-  const fetchPageData = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const [reloadKey, setReloadKey] = useState(0);
 
-    try {
+  useEffect(() => {
+    let active = true; // ignore responses that arrive after a newer request
+
+    const load = async () => {
       const [followUpsResponse, customersResponse] = await Promise.all([
-        fetch(`${API_URL}/follow-ups`),
-        fetch(`${API_URL}/customers`),
+        authFetch(`${API_URL}/follow-ups`),
+        authFetch(`${API_URL}/customers`),
       ]);
 
       if (!followUpsResponse.ok || !customersResponse.ok) {
         throw new Error("Could not load follow-ups or customers.");
       }
 
-      const followUpsResult = await followUpsResponse.json();
-      const customersResult = await customersResponse.json();
+      return Promise.all([followUpsResponse.json(), customersResponse.json()]);
+    };
 
-      setFollowUps(
-        Array.isArray(followUpsResult)
-          ? followUpsResult
-          : followUpsResult.data || []
-      );
+    load()
+      .then(([followUpsResult, customersResult]) => {
+        if (!active) return;
 
-      setCustomers(
-        Array.isArray(customersResult)
-          ? customersResult
-          : customersResult.data || []
-      );
-    } catch (err) {
-      setError(err.message || "Something went wrong while loading data.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setFollowUps(
+          Array.isArray(followUpsResult)
+            ? followUpsResult
+            : followUpsResult.data || []
+        );
 
-  useEffect(() => {
-    fetchPageData();
-  }, [fetchPageData]);
+        setCustomers(
+          Array.isArray(customersResult)
+            ? customersResult
+            : customersResult.data || []
+        );
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err.message || "Something went wrong while loading data.");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const fetchPageData = () => {
+    setLoading(true);
+    setError("");
+    setReloadKey((key) => key + 1);
+  };
 
   const stats = useMemo(() => {
     const pending = followUps.filter((item) => item.status === "Pending");
@@ -154,7 +168,7 @@ export default function FollowUps() {
     setSaving(true);
 
     try {
-      const response = await fetch(`${API_URL}/follow-ups`, {
+      const response = await authFetch(`${API_URL}/follow-ups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -174,7 +188,7 @@ export default function FollowUps() {
 
       setShowModal(false);
       setForm(initialForm);
-      await fetchPageData();
+      fetchPageData();
     } catch (err) {
       setFormError(err.message || "Failed to create follow-up.");
     } finally {

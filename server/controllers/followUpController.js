@@ -1,9 +1,9 @@
-
 const followUpService = require("../services/followUpService");
+const { sendError } = require("../utils/httpError");
 
 const getAllFollowUps = async (req, res) => {
   try {
-    const followUps = await followUpService.getAllFollowUps();
+    const followUps = await followUpService.getAllFollowUps(req.companyId);
 
     return res.status(200).json({
       success: true,
@@ -11,18 +11,13 @@ const getAllFollowUps = async (req, res) => {
       data: followUps,
     });
   } catch (error) {
-    console.error("Get follow-ups error:", error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch follow-ups",
-    });
+    return sendError(res, error, "Failed to fetch follow-ups");
   }
 };
 
 const createFollowUp = async (req, res) => {
   try {
-    const followUp = await followUpService.createFollowUp(req.body);
+    const followUp = await followUpService.createFollowUp(req.body || {}, req.companyId);
 
     return res.status(201).json({
       success: true,
@@ -30,19 +25,7 @@ const createFollowUp = async (req, res) => {
       data: followUp,
     });
   } catch (error) {
-    console.error("Create follow-up error:", error.message);
-
-    const isClientError = [
-      "Customer, title, and due date are required",
-      "Customer not found",
-    ].includes(error.message);
-
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: isClientError
-        ? error.message
-        : "Failed to create follow-up",
-    });
+    return sendError(res, error, "Failed to create follow-up");
   }
 };
 

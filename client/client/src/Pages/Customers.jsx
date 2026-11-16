@@ -1,5 +1,6 @@
 import { Search, Plus, MoreHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
+import { API_URL, authFetch } from "../api";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -18,22 +19,21 @@ function Customers() {
   });
 
   // FETCH CUSTOMERS
-  const fetchCustomers = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/customers"
-      );
-
-      const data = await response.json();
-
-      setCustomers(data);
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchCustomers();
+    let active = true; // ignore the response if the page has unmounted
+
+    authFetch(`${API_URL}/customers`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (active && Array.isArray(data)) setCustomers(data);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch customers:", error);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // HANDLE FORM INPUT
@@ -49,8 +49,8 @@ function Customers() {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/customers",
+      const response = await authFetch(
+        `${API_URL}/customers`,
         {
           method: "POST",
           headers: {
