@@ -8,6 +8,9 @@
     "dev": "nodemon server.js",
     "migrate:tenant": "node scripts/migrate-to-multitenant.js"
   },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
